@@ -21,6 +21,6 @@ class TCPSOCKETCONNECTION_API UCPP_TcpServer : public UObject
 	static UCPP_SocketWrap* Connect(FString Ip, int32 Port);
 	
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Get buffer (converted to FString) from server", Keywords = "Socketer send message tcpsend tcp tcpdisconnect socketersend"), Category = "Networking|Socket")
-	static bool GetMessage(UCPP_SocketWrap* Connection, FString &Message);
+	static bool ReceiveMessage(UCPP_SocketWrap* Connection, FString &Message);
 	
 };

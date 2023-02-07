@@ -28,78 +28,44 @@ UCPP_SocketWrap* UCPP_TcpServer::Connect(FString Ip, int32 Port)
 }
 
 
-bool UCPP_TcpServer::GetMessage(UCPP_SocketWrap* Connection, FString& Message)
+bool UCPP_TcpServer::ReceiveMessage(UCPP_SocketWrap* Connection, FString& Message)
 {
-	// If the passed in socket is not valid
 	if (!IsValid(Connection))
-	{
 		return false;
-	}
-
-	// Set an FSocket pointer to the socket inside of the passed in USocket
-	FSocket* MySocket = Connection->GetSocket();
-
-	// Check if it is not a null pointer
-	if (MySocket == nullptr)
-	{
+	
+	FSocket* Socket = Connection->GetSocket();
+	
+	if (Socket == nullptr)
 		return false;
-	}
-
-
-	// Credit to RAMA for this converter!
-	//Binary Array!
+	
 	TArray<uint8> BinaryData;
 	uint32 Size;
 
-	//while (MySocket->HasPendingData(Size)==0);
-
-
-	int32 Read = 0;
-
-
-
-
-
-	if (!MySocket->Wait(ESocketWaitConditions::WaitForRead, FTimespan::FromSeconds(1))) {       
+	if (!Socket->Wait(ESocketWaitConditions::WaitForRead, FTimespan::FromSeconds(1)))   
 		return nullptr;
-	}
-	// if (MySocket->Recv(BinaryData.GetData(), BinaryData.Num(), Read, ESocketReceiveFlags::Type::None))
-	// 	return nullptr;
-
-
 	
-	
-	
-	while (MySocket->HasPendingData(Size))
+	while (Socket->HasPendingData(Size))
 	{
-		// Be sure that the array doesn't become absolutely insanely large
 		BinaryData.Init(0, FMath::Min(Size, 65507u));
-
-		// Set the counter for the ammount of bytes read to 0
-		int32 Reado = 0;
-		// Recieve the data from the socket and put it into the binary array
-		MySocket->Recv(BinaryData.GetData(), BinaryData.Num(), Reado);
+	
+		int32 Read = 0;
+		Socket->Recv(BinaryData.GetData(), BinaryData.Num(), Read);
 	}
 
-	// Check if there was actually data read into the array
 	if (BinaryData.Num() <= 0)
 	{
-		// No data was read!
 		UE_LOG(LogTemp, Warning, TEXT("No data to read!"));
 		return false;
 	}
-	else
-	{
-		// Be sure to \0 terminate the array
-		BinaryData.Add(0);
-		// Convert it to an fstring and set the passed in message parameter
-		Message = FString(ANSI_TO_TCHAR(reinterpret_cast<const char*>(BinaryData.GetData())));
-		MySocket->Close();
-		MySocket->Shutdown(ESocketShutdownMode::ReadWrite);
 
-		ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM)->DestroySocket(MySocket);
-		Connection->ConditionalBeginDestroy();
+	BinaryData.Add(0);
+	Message = FString(ANSI_TO_TCHAR(reinterpret_cast<const char*>(BinaryData.GetData())));
+	
+	Socket->Close();
+	Socket->Shutdown(ESocketShutdownMode::ReadWrite);
 
-		return true;
-	}
+	ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM)->DestroySocket(Socket);
+	Connection->ConditionalBeginDestroy();
+
+	return true;
 }
